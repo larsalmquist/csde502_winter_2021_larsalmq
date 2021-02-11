@@ -1,0 +1,97 @@
+---
+title: "CSDE 502 - Homework 4"
+author: "Lars Almquist - larsalmq@uw.edu"
+date: "2/3/2021"
+output: bookdown::html_document2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(magrittr)
+library(knitr)
+library(kableExtra)
+library(bookdown)
+library(psych)
+```
+
+
+Homework #4 begins with a re-creation of a histogram of the pain of graduate school as reported by graduate students themselves.
+
+```{r recreate_histogram, echo=FALSE, warning=FALSE, message=FALSE}
+gradpain <- c(rep(0,11), rep(1,1), rep(2,2), rep(3,6), rep(4,8), rep(5,10),
+              rep(6,8), rep(7,30), rep(8,10), rep(9,6), rep(10,2))
+
+barplot(table(gradpain), las=1, ylab="Frequency", xlab="Pain Scale", 
+        main="How painful is graduate school?")
+```
+
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, results=FALSE}
+describe(gradpain)
+## n = 94
+samplesize <- 94
+```
+# How many graduate students are in the sample?
+There are `r samplesize` graduate students in the sample.
+
+# What is the sample mean?
+The mean pain level of grad students in the sample is `r mean(gradpain)`.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, results=FALSE}
+mean(gradpain)
+```
+
+# What is the mean of these 100 means?
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, results=FALSE}
+# Box 1
+## sample size = 94
+## mean = 5.5
+## sd = 2.71
+
+function_box1 <- function(x) {
+  d.vec <- rnorm(n = 94, mean = 5.5, sd = 2.71) %>%
+  round(2)
+}
+
+mean(function_box1(gradpain))
+
+sd(function_box1(gradpain), round(2))
+```
+The mean of these 100 means is `r mean(function_box1(gradpain), round(1))`.
+
+# What is the standard deviation of these 100 means?
+The standard deviation of these 100 means is `r sd(function_box1(gradpain), round(2))`. {I do not know why the "round" command isn't working here - thoughts?}
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, results=FALSE}
+## Box 2
+# Use set.seed(7) then run your function passing in the "gradpain" vector calculated above and a sample size of length(gradpain). Use a loop to do this 100 times and store all 100 returned means.
+set.seed(7)
+function_box1(gradpain)
+mean(function_box1(gradpain))
+print(function_box1(gradpain))
+
+## calculate standard deviation
+sd(function_box1(gradpain), round(2))
+
+function_mean <- mean(function_box1(gradpain))
+function_mean
+
+stdev <- sd(function_box1(gradpain), round(2))
+stdev
+
+# Neither of these are working:
+## confint.default(function_box1(gradpain))
+## confint(function_box1(gradpain))
+```
+# What does your function return for the mean of means?
+According to my function, the mean of means is `r mean(function_box1(gradpain), round(2))`.
+
+# What does your function return for the standard deviation of means?
+According to my function, the standard deviation of means is `r sd(function_box1(gradpain), round(2))`. {I do not know why the "round" command isn't working here - this is the second time it has happened when computing standard deviations, even though it works fine when computing means - thoughts?}
+
+# What does your function return for the 95% confidence interval around the mean?
+Honestly not sure why the `confint` command isn't working here.
