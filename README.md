@@ -1,4 +1,4 @@
-## csde502_winter_2021_larsalmq
+## CSDE 502 - Homework #5: Git Outta Here 
 
 ## This is a README file
 ## It was created by Lars Almquist
