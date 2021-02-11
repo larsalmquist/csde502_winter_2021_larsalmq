@@ -1,4 +1,4 @@
-# csde502_winter_2021_larsalmq
+## csde502_winter_2021_larsalmq
 
 ## This is a README file
 ## It was created by Lars Almquist
