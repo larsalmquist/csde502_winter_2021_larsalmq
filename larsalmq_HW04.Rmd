@@ -31,6 +31,7 @@ barplot(table(gradpain), las=1, ylab="Frequency", xlab="Pain Scale",
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, results=FALSE}
 describe(gradpain)
+describe(gradpain)$n
 ## n = 94
 samplesize <- 94
 ```
@@ -57,6 +58,15 @@ function_box1 <- function(x) {
   round(2)
 }
 
+## this is where I went totally off the rails - I was confused about the instructions to assign d.vec simply as `gradpain`. I *WAY* overthought this and it broke everything that followed.
+
+# From the answer key I should ahve simply made d.vec equal to gradpain and used it as my `x` in a function akin to:
+# f_samp_with_repl <- function(d.vec = gradpain, n = 100){
+#  samp <- sample(x = d.vec, size = n, replace = TRUE)
+#    list(vec.len = length(samp),
+#         vec.mean = mean(samp))
+# }
+
 mean(function_box1(gradpain))
 
 sd(function_box1(gradpain), round(2))
@@ -70,7 +80,7 @@ The standard deviation of these 100 means is `r sd(function_box1(gradpain), roun
 ## Box 2
 # Use set.seed(7) then run your function passing in the "gradpain" vector calculated above and a sample size of length(gradpain). Use a loop to do this 100 times and store all 100 returned means.
 set.seed(7)
-function_box1(gradpain)
+function_box1(gradpain) ## these all broke based on my crap function above
 mean(function_box1(gradpain))
 print(function_box1(gradpain))
 
