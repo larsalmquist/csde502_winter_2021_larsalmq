@@ -81,7 +81,7 @@ The standard deviation of these 100 means is `r sd(function_box1(gradpain), roun
 # Use set.seed(7) then run your function passing in the "gradpain" vector calculated above and a sample size of length(gradpain). Use a loop to do this 100 times and store all 100 returned means.
 set.seed(7)
 function_box1(gradpain) ## these all broke based on my crap function above
-mean(function_box1(gradpain))
+mean(function_box1(gradpain)) # same 
 print(function_box1(gradpain))
 
 ## calculate standard deviation
