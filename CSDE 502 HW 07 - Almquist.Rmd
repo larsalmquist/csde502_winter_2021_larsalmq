@@ -1,0 +1,209 @@
+---
+title: "CSDE 502 HW 07 - Almquist"
+author: "Lars Almquist"
+date: "2/23/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE, warning=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load_libraries, echo=TRUE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(magrittr)
+library(knitr)
+library(readstata13)
+library(kableExtra)
+library(haven)
+library(pdftools)
+library(curl)
+library(readr)
+```
+For this assignment we are working with the full Add Health dataset. The first step is to read in the zip file. The file is massive and thus it must be zipped/compressed. This is unfortunate, as uploading a 37.7mb file to GitHub is not supported at this time, and thus the user must jump through a number of hoops to create a temporary directory, download the file, unzip the file (but first find a way to do so for STATA files, which do not operate the same way as simply reading in CSVs, tables, or dataframes), and convert the file into a more readily useable format. The code used in the previous two weeks on the course website breaks down a couple of lines into the process when checking if the dta or zip files exist (code function beginning with `if(!file.exists(dtafile)){`. An inordinate amount of time (~2-3 hours) was spent attempting to find a sufficient workaround for this problem on online message boards.
+
+```{r read_in_zipfile, echo=TRUE, include=FALSE, warning=FALSE, message=FALSE}
+temp <- tempfile() #set temp directory
+download.file("http://staff.washington.edu/phurvitz/csde502_winter_2021/data/21600-0001-Data.dta.zip",temp)
+
+data_temp <- unzip(temp, "21600-0001-Data.dta") # unzip file
+new_data <- read_dta("21600-0001-Data.dta") # rename (if desired)
+View(new_data) # inspect dataset
+
+colnames(new_data) %<>% # set column names to lowercase to avoid unforced typing errors
+  str_to_lower()
+```
+
+Among the many variables captured by the Add Health dataset are those related to youth violence. Youth between the ages of 14 and 24 are disproportionately more exposed to violence, whether as victim or perpetrator, than nearly every other age group. We will select and explore four violence-related variables from the dataset: 
+1) H1FV1 - You saw someone shoot or stab another person
+2) H1FV2 - Someone pulled a knife or gun on you
+3) H1FV7 - You pulled a knife or gun on someone else
+4) H1FV9 - During the past 30 days, on how many days did you carry a weapon — such as a gun, knife, or         club—to school?
+```{r subset_dataset echo=TRUE, include=FALSE, warning=FALSE, message=FALSE}
+add_health <- new_data %>% # subset 4 new variables from dataset
+  select(h1fv1, ## You saw someone shoot or stab another person
+         h1fv2, ## someone pulled a knife or gun on you
+         h1fv7, ## you pulled a knife or gun on someone else
+         h1fv9) ## days carried a weapon to school (out of 30)
+```
+Here we are going to set H1FV1 as a `factor` variable and order the labels by the count data (n). How frequently have individuals in the study witnessed violence involving a knife or gun?
+```{r set_witness_violence_var echo=TRUE, include=FALSE, warning=FALSE, message=FALSE}
+h1fv1_labels <- add_health$h1fv1 %>% ## identify response labels
+    attributes() %>% 
+    extract2("labels") %>% 
+    names()
+
+h1fv1_labels ## test to make sure labels appear
+
+add_health$witness_violence <- factor(add_health$h1fv1, ## create new factor variable
+                           labels = h1fv1_labels,
+                           ordered = TRUE)
+ 
+witness_count <- add_health %>% ## obtain counts per indicator for new variable
+  group_by(witness_violence) %>% 
+  summarise(n = n())
+witness_count
+
+## Generate frequency table (using kable hoping it works on another computer)
+table_witness <- add_health %>% 
+    group_by(witness_violence) %>% 
+    summarise(n = n()) %>% 
+    mutate(`%` = n / sum(n) * 100) %>% 
+    mutate(`%` = `%` %>% round(1)) %>% 
+    kable() %>% 
+    kable_styling(full_width = FALSE, position = "left")
+
+table_witness
+```
+
+Next we will repeat the same steps to turn H1FV2, H1FV7, AND H1FV9 into `factor` variables. 
+How often has the sample population experienced a violent threat involving a knife or a gun?
+```{r set_experience_threats_var echo=TRUE, include=FALSE, warning=FALSE, message=FALSE}
+h1fv2_labels <- add_health$h1fv2 %>% ## identify response labels
+    attributes() %>% 
+    extract2("labels") %>% 
+    names()
+
+h1fv2_labels ## test to make sure labels appear
+
+add_health$violent_threat <- factor(add_health$h1fv2, ## create new factor variable
+                           labels = h1fv2_labels,
+                           ordered = TRUE)
+ 
+threat_count <- add_health %>% ## obtain counts per indicator for new variable
+  group_by(violent_threat) %>% 
+  summarise(n = n())
+threat_count
+
+## Generate frequency table (using kable hoping it works on another computer)
+table_threat <- add_health %>% 
+    group_by(violent_threat) %>% 
+    summarise(n = n()) %>% 
+    mutate(`%` = n / sum(n) * 100) %>% 
+    mutate(`%` = `%` %>% round(1)) %>% 
+    kable() %>% 
+    kable_styling(full_width = FALSE, position = "left")
+
+table_threat
+```
+
+How often has the sample population perpetrated a violent threat against someone else using a knife or a gun?
+```{r set_perpetrate_threats_var echo=TRUE, include=FALSE, warning=FALSE, message=FALSE}
+h1fv7_labels <- add_health$h1fv7 %>%  ## identify response labels
+    attributes() %>% 
+    extract2("labels") %>% 
+    names()
+
+h1fv7_labels ## test to make sure labels appear
+
+add_health$perpetrate_threat <- factor(add_health$h1fv7, ## create new factor variable
+                           labels = h1fv7_labels,
+                           ordered = TRUE)
+ 
+perp_count <- add_health %>% ## obtain counts per indicator for new variable
+  group_by(perpetrate_threat) %>% 
+  summarise(n = n())
+perp_count
+
+## Generate frequency table (using kable hoping it works on another computer)
+table_perp <- add_health %>% 
+    group_by(perpetrate_threat) %>% 
+    summarise(n = n()) %>% 
+    mutate(`%` = n / sum(n) * 100) %>% 
+    mutate(`%` = `%` %>% round(1)) %>% 
+    kable() %>% 
+    kable_styling(full_width = FALSE, position = "left")
+
+table_perp
+```
+
+How frequently did the study population carry a weapon to school in the 30 days before their interview?
+```{r set_school_weapons_var echo=TRUE, include=FALSE, warning=FALSE, message=FALSE}
+h1fv9_labels <- add_health$h1fv9 %>% ## identify response labels
+    attributes() %>% 
+    extract2("labels") %>% 
+    names()
+
+h1fv9_labels ## test to make sure labels appear
+
+add_health$school_weapon <- factor(add_health$h1fv9, ## create new factor variable
+                           labels = c("None", "1 day", "2-3 days", 
+                                      "4-5 days", "6+ days", "Refused", "Don't know", "N/A"),
+                           ordered = TRUE)
+ 
+school_count <- add_health %>% ## obtain counts per indicator for new variable
+  group_by(school_weapon) %>% 
+  summarise(n = n())
+school_count
+
+## Generate frequency table (using kable hoping it works on another computer)
+table_school <- add_health %>% 
+    group_by(school_weapon) %>% 
+    summarise(n = n()) %>% 
+    mutate(`%` = n / sum(n) * 100) %>% 
+    mutate(`%` = `%` %>% round(1)) %>% 
+    kable() %>% 
+    kable_styling(full_width = FALSE, position = "left")
+
+table_school
+```
+
+I need to work on my `ggplot` skills and remember how to get my titles straight. Until then, here's an ugly histogram plot of the number of times participants carried a weapon to school in the 30 days preceding their interview. 
+```{r, echo=TRUE, include=FALSE, warning=FALSE, message=FALSE}
+library(ggplot2)
+
+ggplot(add_health,
+       aes(x = school_weapon, y = ""), 
+       ylab = "Frequency",
+       xlab = "# Days Carried Weapon to School Last Month") +
+  geom_bar(stat = "identity")
+```
+
+Let's go back to the exposure to violence variable from the beginning. Now we'll create a categorical variable identifying those who witnessed violence vs. those who explicitly did not. Complicating this matter are the other options to the question of how many times someone witnessed violence, such as `(06) Refused`, `(08) Don't Know`, and `(09) Not Applicable`. Let's filter those out and get a purely binary variable of those who never witnessed violence and those who explicitly did witness violence in the dataset.
+
+```{r stratify_violence_var, echo=TRUE, include=FALSE, warning=FALSE, message=FALSE}
+library(dplyr)
+add_health <- add_health %>% ## Create new variable 'witness_cat' to filter out non-specific answers
+  mutate(witness_cat = ifelse(h1fv1 < 6, h1fv1, NA))
+
+summary(witness_cat)
+
+add_health <- add_health %>% ## Create new variable 'witness_any' to ID witness vs. no witness of violence
+  mutate(witness_any = ifelse(witness_cat > 0, 1, 0))
+
+summary(add_health$witness_any)
+
+table(add_health$witness_any,
+      labels = c("None Witnessed", "Witnessed Violence", "NA"))
+
+
+add_health$witness_any <- factor(add_health$witness_any, ## create new factor variable
+                           labels = c("None Witnessed", "Witnessed Violence"))
+table(add_health$witness_any)  
+
+```
+I am now on hour 9 of this homework and will be throwing in the towel shortly. This is absurd.
+```{r save, echo=TRUE, include=FALSE, warning=FALSE, message=FALSE}
+saveRDS(object = csde502_hw07_larsalmq, file = file.path(temp, "csde502_hw07_larsalmq.RDS"))
+```
+
