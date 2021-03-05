@@ -75,7 +75,7 @@ The table supplied above is confusing given the lack of a codebook. if the data 
 ## 
 __Using this data frame (code below), report how many cases checked more than one race.__ Use R code to make this calculation and use inline expressions.
 
-```{r}
+```{r echo=TRUE, message = FALSE, warning=FALSE}
 library(tidyverse)
 library(magrittr)
 library(dplyr)
@@ -102,6 +102,7 @@ dat <- dat %>%
 ## Convert to categorical variable (multiple races = 1, single race = 0)
 multirace_count <- ifelse(dat$multirace > 1, 1, 0)
 sum(multirace_count)
+multirace_count
 ```
 There are `sum(multirace_count)` multiractial individuals in the dataset.
 
@@ -123,31 +124,185 @@ AHwave1_v3 <- read_rds(file = file.path(tmpdir, "AHwave1_v3.rds"))
 
 ## 
 __Label the multirace variable as well as its values using attribute labels.__.
+
 ```{r create_multirace_variable, echo=TRUE, warning=FALSE, message=FALSE}
-## label multirace var
+## Convert to categorical variable (multiple races = 1, single race = 0)
+multirace_count <- ifelse(dat$multirace > 1, 1, 0)
+sum(multirace_count)
+multirace_count
+
+# I am so confused as to what this is actually asking. I'm sure i'm overthinking this, but I've now spent hours trying to get mutate to work, to rename other existing variables, etc. I know how to change the labels of an existing variable, and I can work with the hypothetical data frame above, but creating a new variable within the add health dataset is stumping me. I've spent more time googling solutions than I'd ever imagined.
+#
+# library(sjmisc)
+# library(haven)
+# numrace <- AHwave1_v3$numrace
+# numrace <- c(1:6, 9)
+# numrace <- set_labels(AHwave1_v3$numrace, labels = c(
+#                        "(1) one race, White",
+#                        "(2) one race, not White",
+#                        "(3) two races, includes White",
+#                        "(4) two races, both non-White",
+#                        "(5) three or more races, includes White",
+#                        "(6) three or more races, all non-White",
+#                        "(9) any race missing"))
+# 
+#
+#
+## hard code multirace variable, assign attributes
+#
+#
+# AHwave1_v3 <- AHwave1_v3 %>% 
+#  mutate(multirace = AHwave1_v3$h1gi5,
+#         labels = c(
+#                        `1` = "one race, White",
+#                        `2` = "one race, not White",
+#                        `3` = "two races, includes White",
+#                        `4` = "two races, both non-White",
+#                        `5` = "three or more races, includes White",
+#                        `6` = "three or more races, all non-White",
+#                        `9` = "any race missing"))
+#
+#
+# rlang::last_error()
+# colnames(AHwave1_v3)
+# numrace <- AHwave1_v3$numrace
+#
+# AHwave1_v3 <- AHwave1_v3 %>% 
+#  mutate(numrace = AHwave1_v3$numrace)
+#
+# View(AHwave1_v3)
+#
+# numrace$white <- ifelse(AHwave1_v3$white == 1, 1, 0) <- 1
+# numrace$black <- ifelse(AHwave1_v3$black == 1, 1, 0) <- 2
+#
+##############
+
+
+# This FINALLY works, somewhat
+library(expss)
+race_multi <- AHwave1_v3$race_multi
+race_multi = c(1,2,3,4,5,6,9)
+
+val_lab(race_multi) = num_lab(
+                        "
+                        1 one race, White
+                        2 one race, not White
+                        3 two races, includes White
+                        4 two races, both non-White
+                        5 three or more races, includes White
+                        6 three or more races, all non-White
+                        9 any race missing"
+                        )
+
+attributes(race_multi)$labels
 ```
 
 ## 
 __Include below a contingency table of the multirace variable. Make sure that the values are labelled so the table is readable, and also include any missing values.__
-```{r}
+```{r echo=TRUE, message = FALSE, warning=FALSE}
 ## insert table - see Phil's emails bc previous docs/code didn't work
+library(kableExtra)
+
+## Still can't figure out what I'm doing wrong with "mutate"
+# race_multi <- AHwave1_v3$race_multi
+#
+# AHwave1_v3$race_multi <- race_multi
+#
+# AHwave1_v3 <- AHwave1_v3 %>% 
+#  mutate(race_multi = AHwave1_v3$race_multi)
+#
+# head(AHwave1_v3$race_multi)
+#
+# AHwave1_v3 %>% 
+#  group_by(race_multi) %>% 
+#  summarise(n = n()) %>% 
+#  kable() %>% 
+#  kable_styling(full_width = FALSE, position = "left")
+#
+# table(race_multi)
+
 ```
 
 # 
 __Review part B of each of the answers (i.e., `H1KQ1B .. H1KQ10B`) to the Knowledge Quiz (Section 19 of the Add Health questionnaire, documented in `INH19PUB.PDF`). The 10 questions each ask: “How confident are you that your answer is correct?”__
 
-```{r}
-## use "*" operator from Week 8 course code (e.g., instead of *'a')
-```
-
 ## 
 __Write R code that creates a single summary variable named `kqconfidence`, with a larger number representing the respondent being more confident across all questions (scale of 0 to 3 for each individual question; `kqconfidence` will be the sum for each subject across the 10 questions). Note that any observations with value 7 (i.e., age less than 15) should be removed from the data frame, and values 6, 8, and 9 should be coded as `NA` (i.e., missing) for the purposes of scoring confidence. Document your code so that the reader knows how you scored the scale and how you handled missing values. Make sure to label the new variable.__
 
 ```{r}
+## use "*" operator from Week 8 course code (e.g., instead of *'a')
 ## generate `kqconfidence`
 # likert scale / assign values; 3 = very conf, 2, 1, 0, etc
 # use ! or != code to filter out value of 7 (see week 8 code)
+
+```
+
+
+```{r echo=FALSE, warning = FALSE, message= FALSE, include=FALSE}
+## don't print into HTML to save space
+## I'm sure there's a better way to do this with pipes, 
+## but I kept getting error messages
+
 ## recode 6, 8, 9 as NA
+## we can actually select items 1-5 by removing 6+, 
+## but in both the hard recode and the filtering, 
+## there were a few `8`s in the data table, which was weird
+
+ifelse(AHwave1_v3$h1kq1b == 6, NA, AHwave1_v3$h1kq1b)
+ifelse(AHwave1_v3$h1kq1b == 8, NA, AHwave1_v3$h1kq1b)
+ifelse(AHwave1_v3$h1kq1b == 9, NA, AHwave1_v3$h1kq1b)
+```
+
+
+```{r echo=TRUE, warning = FALSE, message= FALSE, include=FALSE}
+AHwave1_v3 <- AHwave1_v3 %>% 
+    filter(h1kq1b != 7) %>% 
+    select(
+        matches("h1kq.*b")) # include only part B of each question
+
+# reverse scoring order
+AHwave1_v3 %>%
+            funs(
+              case_when(
+                .== 1 ~ 3, # `very` = 3 points
+                .== 2 ~ 2, # `moderately` = 2 points
+                .== 3 ~ 1, # `slightly` = 1 point
+                .== 4 ~ 0, # `not at all` = 0 points
+                TRUE ~ as.numeric(.)
+              )
+            )
+          
+```
+
+```{r echo=TRUE, warning = FALSE, message= FALSE, include=FALSE}
+AHwave1_v3 %>% 
+  mutate(kqconfidence = rowSums(.)) %>% 
+  kable() %>% 
+  kable_styling(full_width = FALSE, position = "left") %>% 
+  add_header_above(rep(c("Sperm Death"=1, 
+                         "Condom Out"=1, 
+                         "Period Fertility"=1, 
+                         "Condom: AIDS"=1,
+                         "Condom Fit"=1,
+                         "Condom Vaseline"=1,
+                         "Pregnancy: Pre-Period"=1,
+                         "Pregnancy Pull Out"=1,
+                         "Condom Unroll"=1,
+                         "Pregnancy: Period"=1,
+                         "Confidence Score"=1
+                         )
+                       )
+                   )
+```
+
+
+```{r}
+
+```
+
+```{r}
+
+
 ```
 
 ## 
