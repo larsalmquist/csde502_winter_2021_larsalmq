@@ -1,0 +1,431 @@
+---
+title: "CSDE 502 Winter 2021, Assignment 9"
+author: "larsalmq"
+contact: "larsalmq@uw.edu"
+output: 
+    bookdown::html_document2:
+        number_sections: true
+        self_contained: true
+        code_folding: hide
+        toc: true
+        toc_float:
+            collapsed: true
+            smooth_scroll: false
+    pdf_document:
+        number_sections: true
+        toc: true
+        fig_cap: yes
+        keep_tex: yes
+urlcolor: blue 
+---
+
+```{r setup, echo=TRUE, message=FALSE, warning=FALSE}
+library(captioner)
+library(tidyverse)
+library(magrittr)
+library(knitr)
+library(readstata13)
+library(kableExtra)
+library(haven)
+
+
+figure_nums <- captioner(prefix = "Figure")
+table_nums <- captioner(prefix = "Table")
+```
+
+___Explanation___:
+This assignment is intended to give you more practice delving into the Add Health data set and in manipulating additional variables. 
+
+___Instructions___: 
+
+1. Make sure your Rmd file has no local file system dependencies (i.e., anyone should be able to recreate the output HTML using only the Rmd source file).
+1. Make a copy of this Rmd file and add answers below each question. The code that generated the answers should be included, as well as the complete source code for the document.
+1. Change the YAML header above to identify yourself and include contact information.
+1. For any tables or figures, include captions and cross-references and any other document automation methods as necessary.
+1. Make sure your output HTML file looks appealing to the reader.
+1. Upload the final Rmd to your github repository.
+1. Download [`assn_id.txt`](http://staff.washington.edu/phurvitz/csde502_winter_2021/assignments/assn_id.txt) and include the URL to your Rmd file on github.com.
+1. Create a zip file from your copy of `assn_id.txt` and upload the zip file to the Canvas site for Assignment 9. ___The zip file should contain only the text file. Do not include any additional files in the zip file--everything should be able to run from the file you uploaded to github.com. Please use zip format and not 7z or any other compression/archive format.___
+
+#
+__Using the full household roster (you'll need to go back the full raw data source, [21600-0001-Data.dta](http://staff.washington.edu/phurvitz/csde502_winter_2021/data/21600-0001-Data.dta.zip)), create the following variables for each respondent. Document any decisions that you make regarding missing values, definitions, etc. in your narrative as well as in the R code.  Include a frequency tabulation and a histogram of each result.__
+
+```{r read_in_zipfile, echo=TRUE, include=FALSE, warning=FALSE, message=FALSE}
+temp <- tempfile() #set temp directory
+download.file("http://staff.washington.edu/phurvitz/csde502_winter_2021/data/21600-0001-Data.dta.zip",temp)
+
+data_temp <- unzip(temp, "21600-0001-Data.dta") # unzip file
+new_data <- read_dta("21600-0001-Data.dta") # rename (if desired)
+View(new_data) # inspect dataset
+
+colnames(new_data) %<>% # set column names to lowercase to avoid unforced typing errors
+  str_to_lower()
+```
+
+
+```{r echo=TRUE, include=FALSE, warning=FALSE, message=FALSE}
+## Select variables and make sure they're numeric
+household <- new_data %>% 
+    select(aid,
+           h1hr3a, h1hr3b, h1hr3c, h1hr3d, h1hr3e, h1hr3f, h1hr3g, 
+           h1hr3h, h1hr3i,h1hr3j, h1hr3k, h1hr3l, h1hr3m, h1hr3n,
+           h1hr3o, h1hr3p) %>% 
+   mutate_at(
+        .vars = vars(-aid),
+        list(
+            ~ as.numeric(.)
+        )
+    ) 
+
+## convert each family member to a raw count, not categorical variable
+household_size <- household %>% 
+  mutate(h1hr3a = ifelse(household$h1hr3a < "95", 1, NA),
+         h1hr3b = ifelse(household$h1hr3b < "95", 1, NA),
+         h1hr3c = ifelse(household$h1hr3c < "95", 1, NA),
+         h1hr3d = ifelse(household$h1hr3d < "95", 1, NA),
+         h1hr3e = ifelse(household$h1hr3e < "95", 1, NA),
+         h1hr3f = ifelse(household$h1hr3f < "95", 1, NA),
+         h1hr3g = ifelse(household$h1hr3g < "95", 1, NA),
+         h1hr3h = ifelse(household$h1hr3h < "95", 1, NA),
+         h1hr3i = ifelse(household$h1hr3i < "95", 1, NA),
+         h1hr3j = ifelse(household$h1hr3j < "95", 1, NA),
+         h1hr3k = ifelse(household$h1hr3k < "95", 1, NA),
+         h1hr3l = ifelse(household$h1hr3l < "95", 1, NA),
+         h1hr3m = ifelse(household$h1hr3m < "95", 1, NA),
+         h1hr3n = ifelse(household$h1hr3n < "95", 1, NA),
+         h1hr3o = ifelse(household$h1hr3o < "95", 1, NA),
+         h1hr3p = ifelse(household$h1hr3p < "95", 1, NA),
+         )
+  
+  # run the rowSums. We can ignore aid by using an inline "select"
+household_size <-  household_size %>% 
+    mutate(household_sum = 
+               rowSums(select(., -aid),
+                       na.rm = TRUE))
+
+## Total number of household members in dataset 
+sum(household_size$household_sum)
+
+## Histogram of household size
+p<- ggplot(household_size,
+       aes(x = household_sum)) +
+      geom_histogram(color = "black", 
+                     fill = "blue",
+                     binwidth = 1) +
+    labs(title="Add Health Households",
+         x="Number of Household Members", 
+         y = "Count")+
+  theme_bw()
+
+p 
+
+## Create frequency table
+household_size %>% 
+  group_by(household_sum) %>% 
+  summarise(n = n()) %>% 
+  mutate(`cumulative sum` = cumsum(n),
+         `%` = round(n / sum(n)*100, 1),
+         `cumulative %` = cumsum(`%`)) %>% 
+  kable(caption = "Distribution of Family Household Size") %>% 
+  kable_styling(full_width = FALSE, position = "center")
+```
+##
+__Total number in household__
+There are `sum(household_size$household_sum)` household members of students in the dataset.
+
+##
+__Number of sisters__
+```{r sisters, echo=TRUE, message=FALSE, warning=FALSE}
+## Select variables and make sure they're numeric
+sisters <- new_data %>% 
+    select(aid,
+           h1hr3a, h1hr3b, h1hr3c, h1hr3d, h1hr3e, h1hr3f, h1hr3g, 
+           h1hr3h, h1hr3i,h1hr3j, h1hr3k, h1hr3l, h1hr3m, h1hr3n,
+           h1hr3o, h1hr3p) %>% 
+   mutate_at(
+        .vars = vars(-aid),
+        list(
+            ~ as.numeric(.)
+        )
+    ) 
+
+## convert each family member to a raw count, not categorical variable
+sisters<- sisters %>% 
+  mutate(h1hr3a = ifelse(sisters$h1hr3a == "8", 1, NA),
+         h1hr3b = ifelse(sisters$h1hr3b == "8", 1, NA),
+         h1hr3c = ifelse(sisters$h1hr3c == "8", 1, NA),
+         h1hr3d = ifelse(sisters$h1hr3d == "8", 1, NA),
+         h1hr3e = ifelse(sisters$h1hr3e == "8", 1, NA),
+         h1hr3f = ifelse(sisters$h1hr3f == "8", 1, NA),
+         h1hr3g = ifelse(sisters$h1hr3g == "8", 1, NA),
+         h1hr3h = ifelse(sisters$h1hr3h == "8", 1, NA),
+         h1hr3i = ifelse(sisters$h1hr3i == "8", 1, NA),
+         h1hr3j = ifelse(sisters$h1hr3j == "8", 1, NA),
+         h1hr3k = ifelse(sisters$h1hr3k == "8", 1, NA),
+         h1hr3l = ifelse(sisters$h1hr3l == "8", 1, NA),
+         h1hr3m = ifelse(sisters$h1hr3m == "8", 1, NA),
+         h1hr3n = ifelse(sisters$h1hr3n == "8", 1, NA),
+         h1hr3o = ifelse(sisters$h1hr3o == "8", 1, NA),
+         h1hr3p = ifelse(sisters$h1hr3p == "8", 1, NA),
+         )
+  
+# Row Sums
+sisters <-  sisters %>% 
+    mutate(sisters_sum = 
+               rowSums(select(., -aid),
+                       na.rm = TRUE))
+
+## Total number of household members in dataset 
+sum(sisters$sisters_sum)
+
+## Histogram of household size
+s <- ggplot(sisters,
+       aes(x = sisters_sum)) +
+      geom_histogram(color = "black", 
+                     fill = "blue",
+                     binwidth = 1) +
+    labs(title="Add Health Households",
+         x="Number of Sisters in Household", 
+         y = "Count")+
+  theme_bw()
+
+s
+
+## Create frequency table
+sisters %>% 
+  group_by(sisters_sum) %>% 
+  summarise(n = n()) %>% 
+  mutate(`cumulative sum` = cumsum(n),
+         `%` = round(n / sum(n)*100, 1),
+         `cumulative %` = cumsum(`%`)) %>% 
+  kable(caption = "Distribution of Sisters in Household") %>% 
+  kable_styling(full_width = FALSE, position = "center")
+```
+Students in the Add Health dataset report having `sum(sisters$sisters_sum)` sisters living in their households.
+
+##
+__Number of brothers__
+```{r brothers, echo=TRUE, message=FALSE, warning=FALSE}
+## Select variables and make sure they're numeric
+brothers <- new_data %>% 
+    select(aid,
+           h1hr3a, h1hr3b, h1hr3c, h1hr3d, h1hr3e, h1hr3f, h1hr3g, 
+           h1hr3h, h1hr3i,h1hr3j, h1hr3k, h1hr3l, h1hr3m, h1hr3n,
+           h1hr3o, h1hr3p) %>% 
+   mutate_at(
+        .vars = vars(-aid),
+        list(
+            ~ as.numeric(.)
+        )
+    ) 
+
+## convert each family member to a raw count, not categorical variable
+brothers <- brothers %>% 
+  mutate(h1hr3a = ifelse(brothers$h1hr3a == "5", 1, NA),
+         h1hr3b = ifelse(brothers$h1hr3b == "5", 1, NA),
+         h1hr3c = ifelse(brothers$h1hr3c == "5", 1, NA),
+         h1hr3d = ifelse(brothers$h1hr3d == "5", 1, NA),
+         h1hr3e = ifelse(brothers$h1hr3e == "5", 1, NA),
+         h1hr3f = ifelse(brothers$h1hr3f == "5", 1, NA),
+         h1hr3g = ifelse(brothers$h1hr3g == "5", 1, NA),
+         h1hr3h = ifelse(brothers$h1hr3h == "5", 1, NA),
+         h1hr3i = ifelse(brothers$h1hr3i == "5", 1, NA),
+         h1hr3j = ifelse(brothers$h1hr3j == "5", 1, NA),
+         h1hr3k = ifelse(brothers$h1hr3k == "5", 1, NA),
+         h1hr3l = ifelse(brothers$h1hr3l == "5", 1, NA),
+         h1hr3m = ifelse(brothers$h1hr3m == "5", 1, NA),
+         h1hr3n = ifelse(brothers$h1hr3n == "5", 1, NA),
+         h1hr3o = ifelse(brothers$h1hr3o == "5", 1, NA),
+         h1hr3p = ifelse(brothers$h1hr3p == "5", 1, NA),
+         )
+  
+# Row Sums
+brothers <-  brothers %>% 
+    mutate(brothers_sum = 
+               rowSums(select(., -aid),
+                       na.rm = TRUE))
+
+## Total number of household members in dataset 
+sum(brothers$brothers_sum)
+
+## Histogram of household size
+b <- ggplot(brothers,
+       aes(x = brothers_sum)) +
+      geom_histogram(color = "black", 
+                     fill = "darkorchid",
+                     binwidth = 1) +
+    labs(title="Add Health Households",
+         x="Number of Brothers in Household", 
+         y = "Count")+
+  theme_bw()
+
+b
+
+## Create frequency table
+brothers %>% 
+  group_by(brothers_sum) %>% 
+  summarise(n = n()) %>% 
+  mutate(`cumulative sum` = cumsum(n),
+         `%` = round(n / sum(n)*100, 1),
+         `cumulative %` = cumsum(`%`)) %>% 
+  kable(caption = "Distribution of Brothers in Household") %>% 
+  kable_styling(full_width = FALSE, position = "center")
+```
+
+Participants report `sum(brothers$brothers_sum)` brothers living in their households.
+
+##
+__Total number of siblings__
+```{r siblings, echo=TRUE, message=FALSE, warning=FALSE}
+
+## Select variables and make sure they're numeric
+siblings <- new_data %>% 
+    select(aid,
+           h1hr3a, h1hr3b, h1hr3c, h1hr3d, h1hr3e, h1hr3f, h1hr3g, 
+           h1hr3h, h1hr3i,h1hr3j, h1hr3k, h1hr3l, h1hr3m, h1hr3n,
+           h1hr3o, h1hr3p) %>% 
+   mutate_at(
+        .vars = vars(-aid),
+        list(
+            ~ as.numeric(.)
+        )
+    ) 
+
+View(siblings)
+## can't seem to figure out 'ifelse' with an "or" statement, so
+## clear the "1" value
+
+siblings <- siblings %>% 
+  mutate(h1hr3a = ifelse(siblings$h1hr3a  == "1", 0, h1hr3a),
+         h1hr3b = ifelse(siblings$h1hr3b  == "1", 0, h1hr3b),
+         h1hr3c = ifelse(siblings$h1hr3c  == "1", 0, h1hr3c),
+         h1hr3d = ifelse(siblings$h1hr3d  == "1", 0, h1hr3d),
+         h1hr3e = ifelse(siblings$h1hr3e  == "1", 0, h1hr3e),
+         h1hr3f = ifelse(siblings$h1hr3f  == "1", 0, h1hr3f),
+         h1hr3g = ifelse(siblings$h1hr3g  == "1", 0, h1hr3g),
+         h1hr3h = ifelse(siblings$h1hr3h  == "1", 0, h1hr3h),
+         h1hr3i = ifelse(siblings$h1hr3i  == "1", 0, h1hr3i),
+         h1hr3j = ifelse(siblings$h1hr3j  == "1", 0, h1hr3j),
+         h1hr3k = ifelse(siblings$h1hr3k  == "1", 0, h1hr3k),
+         h1hr3l = ifelse(siblings$h1hr3l  == "1", 0, h1hr3l),
+         h1hr3m = ifelse(siblings$h1hr3m  == "1", 0, h1hr3m),
+         h1hr3n = ifelse(siblings$h1hr3n  == "1", 0, h1hr3n),
+         h1hr3o = ifelse(siblings$h1hr3o  == "1", 0, h1hr3o),
+         h1hr3p = ifelse(siblings$h1hr3p  == "1", 0, h1hr3p),
+         )
+         
+
+siblings <- siblings %>% 
+  mutate(h1hr3a = ifelse(siblings$h1hr3a  == "5", 1, h1hr3a),
+         h1hr3b = ifelse(siblings$h1hr3b  == "5", 1, h1hr3b),
+         h1hr3c = ifelse(siblings$h1hr3c  == "5", 1, h1hr3c),
+         h1hr3d = ifelse(siblings$h1hr3d  == "5", 1, h1hr3d),
+         h1hr3e = ifelse(siblings$h1hr3e  == "5", 1, h1hr3e),
+         h1hr3f = ifelse(siblings$h1hr3f  == "5", 1, h1hr3f),
+         h1hr3g = ifelse(siblings$h1hr3g  == "5", 1, h1hr3g),
+         h1hr3h = ifelse(siblings$h1hr3h  == "5", 1, h1hr3h),
+         h1hr3i = ifelse(siblings$h1hr3i  == "5", 1, h1hr3i),
+         h1hr3j = ifelse(siblings$h1hr3j  == "5", 1, h1hr3j),
+         h1hr3k = ifelse(siblings$h1hr3k  == "5", 1, h1hr3k),
+         h1hr3l = ifelse(siblings$h1hr3l  == "5", 1, h1hr3l),
+         h1hr3m = ifelse(siblings$h1hr3m  == "5", 1, h1hr3m),
+         h1hr3n = ifelse(siblings$h1hr3n  == "5", 1, h1hr3n),
+         h1hr3o = ifelse(siblings$h1hr3o  == "5", 1, h1hr3o),
+         h1hr3p = ifelse(siblings$h1hr3p  == "5", 1, h1hr3p),
+         )
+
+
+siblings <- siblings %>% 
+  mutate(h1hr3a = ifelse(siblings$h1hr3a  == "8", 1, h1hr3a),
+         h1hr3b = ifelse(siblings$h1hr3b  == "8", 1, h1hr3b),
+         h1hr3c = ifelse(siblings$h1hr3c  == "8", 1, h1hr3c),
+         h1hr3d = ifelse(siblings$h1hr3d  == "8", 1, h1hr3d),
+         h1hr3e = ifelse(siblings$h1hr3e  == "8", 1, h1hr3e),
+         h1hr3f = ifelse(siblings$h1hr3f  == "8", 1, h1hr3f),
+         h1hr3g = ifelse(siblings$h1hr3g  == "8", 1, h1hr3g),
+         h1hr3h = ifelse(siblings$h1hr3h  == "8", 1, h1hr3h),
+         h1hr3i = ifelse(siblings$h1hr3i  == "8", 1, h1hr3i),
+         h1hr3j = ifelse(siblings$h1hr3j  == "8", 1, h1hr3j),
+         h1hr3k = ifelse(siblings$h1hr3k  == "8", 1, h1hr3k),
+         h1hr3l = ifelse(siblings$h1hr3l  == "8", 1, h1hr3l),
+         h1hr3m = ifelse(siblings$h1hr3m  == "8", 1, h1hr3m),
+         h1hr3n = ifelse(siblings$h1hr3n  == "8", 1, h1hr3n),
+         h1hr3o = ifelse(siblings$h1hr3o  == "8", 1, h1hr3o),
+         h1hr3p = ifelse(siblings$h1hr3p  == "8", 1, h1hr3p),
+         )
+
+siblings <- siblings %>% 
+  mutate(h1hr3a = ifelse(siblings$h1hr3a  == "1", 1, 0),
+         h1hr3b = ifelse(siblings$h1hr3b  == "1", 1, 0),
+         h1hr3c = ifelse(siblings$h1hr3c  == "1", 1, 0),
+         h1hr3d = ifelse(siblings$h1hr3d  == "1", 1, 0),
+         h1hr3e = ifelse(siblings$h1hr3e  == "1", 1, 0),
+         h1hr3f = ifelse(siblings$h1hr3f  == "1", 1, 0),
+         h1hr3g = ifelse(siblings$h1hr3g  == "1", 1, 0),
+         h1hr3h = ifelse(siblings$h1hr3h  == "1", 1, 0),
+         h1hr3i = ifelse(siblings$h1hr3i  == "1", 1, 0),
+         h1hr3j = ifelse(siblings$h1hr3j  == "1", 1, 0),
+         h1hr3k = ifelse(siblings$h1hr3k  == "1", 1, 0),
+         h1hr3l = ifelse(siblings$h1hr3l  == "1", 1, 0),
+         h1hr3m = ifelse(siblings$h1hr3m  == "1", 1, 0),
+         h1hr3n = ifelse(siblings$h1hr3n  == "1", 1, 0),
+         h1hr3o = ifelse(siblings$h1hr3o  == "1", 1, 0),
+         h1hr3p = ifelse(siblings$h1hr3p  == "1", 1, 0),
+         )
+
+# Row Sums
+siblings <-  siblings %>% 
+    mutate(siblings_sum = 
+               rowSums(select(., -aid),
+                       na.rm = TRUE))
+
+## Total number of household members in dataset 
+sum(siblings$siblings_sum)
+
+## It would have been way faster to do this without figuring out a loop
+sum(new_data$h1hr3a == 5)
+sum(new_data$h1hr3b == 8) ## and continue all the way down the list
+
+## Histogram of household size
+b <- ggplot(siblings,
+       aes(x = siblings_sum)) +
+      geom_histogram(color = "black", 
+                     fill = "darkorchid",
+                     binwidth = 1) +
+    labs(title="Add Health Households",
+         x="Number of Siblings in Household (total)", 
+         y = "Count")+
+  theme_bw()
+
+b
+
+## Create frequency table
+siblings %>% 
+  group_by(siblings_sum) %>% 
+  summarise(n = n()) %>% 
+  mutate(`cumulative sum` = cumsum(n),
+         `%` = round(n / sum(n)*100, 1),
+         `cumulative %` = cumsum(`%`)) %>% 
+  kable(caption = "Distribution of Households with Siblings") %>% 
+  kable_styling(full_width = FALSE, position = "center")
+```
+Participants report having a total of `sum(siblings$siblings_sum)` siblings in the household.
+
+#
+__What proportion of students live with two biological parents? Include the analysis in your R code.__
+```{r dual_parent, echo=TRUE, message=FALSE, warning=FALSE}
+
+```
+
+
+#
+__Calculate the number of household members that are NOT biological mother, biological father, full brother or full sister. Create a contingency table and histogram for this variable.__
+
+```{r non_biological, echo=TRUE, message=FALSE, warning=FALSE}
+
+```
+
+## Source code
+```{r comment=''}
+cat(readLines(con = "csde502_2021_assignment09.Rmd"), sep = '\n')
+```
