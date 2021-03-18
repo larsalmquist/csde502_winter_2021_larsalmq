@@ -35,23 +35,36 @@ figure_nums <- captioner(prefix = "Figure")
 table_nums <- captioner(prefix = "Table")
 ```
 ```{r}
+belgium <- read.csv(url("https://github.com/larsalmquist/csde502_winter_2021_larsalmq/blob/larsalmquist-upload-1/lifeexp_belgium.csv"))
+
+View(belgium)
+
+test <- read.table(url("https://www.mortality.org/hmd/BEL/STATS/E0per.txt"))
+```
+Unfortunately, these files won't load, despite much Googling. I've tried 1) linking to the mortality.org website's txt files, 2) uploading those files to my personal GitHub account to bypass the password gatekeeping, and 3) done #2 but after converting the file to a .csv file. None of these 3 options work. I have other final exams and a mountain of RAship work to attend to and do not have time for this right now.
+
+I had planned to do a fun (at least to me) analysis of Belgian mortality rates over time, including (1) the Napoleonic invasion(s); (2) King Leopold II's 'Scramble for Africa' and resulting mortality of Belgian colonists in the Congo, Burundi, and Rwanda; and (3) mortality resulting from the German invasion of the country during WWII. 
+
+Unfortunately, there is minimal help on the mortality.org website. Nor are any of the recent CSDE 502 lecture recordings uploaded to reference what was shown on Friday, which was minimal.
+
+I am submitting this to show I tried, but again, we are being asked to conduct homework assignments using skills (troubleshooting, programming, or otherwise) that have either a) not been vetted recently and/or b) we have not been taught in this course and must be expected to have learned elsewhere, despite this being a CSDE training course. 
+
+
+```{r}
 
 ```
-
-d) Include at least one of each of the following
-• text with imbedded R
-• hyperlink
-• table
-• plot
 
 Follow the standard scientific paper format, with these sections:
-• Introduction (brief, describing the country)
-• Methods
-    o Data (b) Verbiage that describes the data and references the HMD data source.)
-    o Analysis (c) An analysis of the data to describe something interesting about the country.)
-• Results
-• Discussion
-• Conclusions
-• References (if any)
-```
-# Introduction
+# Introduction (brief, describing the country)
+
+# Methods
+    ## Data (b) Verbiage that describes the data and references the HMD data source.)
+    ## Analysis (c) An analysis of the data to describe something interesting about the country.)
+
+# Results
+
+# Discussion
+
+# Conclusions
+
+# References (if any)
