@@ -1,0 +1,57 @@
+---
+title: "CSDE 502 - HW 10 - Mortality.org - Belgium"
+author: "Lars Almquist"
+date: "3/17/2021"
+output: 
+    bookdown::html_document2:
+        number_sections: true
+        self_contained: true
+        code_folding: hide
+        toc: true
+        toc_float:
+            collapsed: true
+            smooth_scroll: false
+    pdf_document:
+        number_sections: true
+        toc: true
+        fig_cap: yes
+        keep_tex: yes
+urlcolor: blue 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r warning=FALSE, message=FALSE}
+library(captioner)
+suppressMessages(library(tidyverse))
+library(magrittr)
+library(knitr)
+library(kableExtra)
+library(haven)
+library(bookdown)
+
+figure_nums <- captioner(prefix = "Figure")
+table_nums <- captioner(prefix = "Table")
+```
+```{r}
+
+```
+
+d) Include at least one of each of the following
+• text with imbedded R
+• hyperlink
+• table
+• plot
+
+Follow the standard scientific paper format, with these sections:
+• Introduction (brief, describing the country)
+• Methods
+    o Data (b) Verbiage that describes the data and references the HMD data source.)
+    o Analysis (c) An analysis of the data to describe something interesting about the country.)
+• Results
+• Discussion
+• Conclusions
+• References (if any)
+```
+# Introduction
