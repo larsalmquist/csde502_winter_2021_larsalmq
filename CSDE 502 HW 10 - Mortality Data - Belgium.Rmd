@@ -35,6 +35,8 @@ figure_nums <- captioner(prefix = "Figure")
 table_nums <- captioner(prefix = "Table")
 ```
 ```{r}
+belg <- read.table("https://github.com/larsalmquist/csde502_winter_2021_larsalmq/blob/larsalmquist-upload-1/lifeexp_belgium.txt", skip = 2, header = TRUE)
+
 belgium <- read.csv(url("https://github.com/larsalmquist/csde502_winter_2021_larsalmq/blob/larsalmquist-upload-1/lifeexp_belgium.csv"))
 
 View(belgium)
